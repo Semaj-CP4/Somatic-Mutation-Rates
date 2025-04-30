@@ -1,25 +1,4 @@
 
-Make directory to place manifest file in: 
-mkdir tcga_LUSC_data_somatic_mutation
-
-cd tcga_LUSC_data_somatic_mutation
-
-Go to https://portal.gdc.cancer.gov/
-
-Go to Projects and filter in Primary Site to bronchus and lung 
-
-Save cohort and set as current. Then navigate to repository and Select these file types: 
-Data Format  = maf (Select under Files tab)
-Access = open
-Data Type = Masked Somatic Mutation
-
-Download manifest file and place in VM: 
-
-Download gdc-client 
-
-Next unpack all of files using this command but enter the manifest file name
-gdc-client download -m [manifest_FILE_NAME]
-
 Write bash loop to move all files in downloaded directories up in your parent directory. 
 
 Here is the code: 
@@ -76,49 +55,5 @@ echo "Copy operation summary:" >> "$LOGFILE"
 echo "Total files processed: $total_files" >> "$LOGFILE"
 echo "Files copied: $copied_files" >> "$LOGFILE"
 echo "Files skipped: $skipped_files" >> "$LOGFILE"
-
-###CODE ENDS HERE!!!
-
-Next make bash script that uncompresses each file and counts the number of time STAT5A and TP53 appears. 
-
-###Code starts here!
-
-#!/bin/bash
-
-# Output file for results
-output_file="gene_mutation_rates.txt"
-
-# Initialize the output file with headers
-echo "File Name,STAT5A Mutations,TP53 Mutations,Total Mutations,STAT5A Rate (%),TP53 Rate (%)" > "$output_file"
-
-# Loop through compressed MAF files
-for compressed_file in *.maf.gz; do
-  # Skip if no matching files
-  [ -f "$compressed_file" ] || continue
-  
-  # File name without extension for display
-  file_name="${compressed_file%.maf.gz}"
-  
-  echo "Processing $compressed_file..."
-  
-  # Count mutations for each gene and total mutations (using on-the-fly processing)
-  stat5a_count=$(zcat "$compressed_file" | grep -c "STAT5A")
-  tp53_count=$(zcat "$compressed_file" | grep -c "TP53")
-  total_mutations=$(zcat "$compressed_file" | grep -v "^#" | wc -l)
-  
-  # Calculate mutation rates as percentages (with error handling for division by zero)
-  if [ "$total_mutations" -gt 0 ]; then
-    stat5a_rate=$(echo "scale=4; $stat5a_count * 100 / $total_mutations" | bc)
-    tp53_rate=$(echo "scale=4; $tp53_count * 100 / $total_mutations" | bc)
-  else
-    stat5a_rate="N/A"
-    tp53_rate="N/A"
-  fi
-  
-  # Append results to output file
-  echo "$file_name,$stat5a_count,$tp53_count,$total_mutations,$stat5a_rate,$tp53_rate" >> "$output_file"
-done
-
-echo "Analysis complete. Results saved to $output_file"
 
 ###CODE ENDS HERE!!!
